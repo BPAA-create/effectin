@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+
+<html lang="id"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Soundboard 9 Tombol - Efek Suara Interaktif</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet"/>
+<style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .btn-3d {
+      transition: all 0.08s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 10px 0 var(--shadow-color), 0 20px 25px -5px rgba(0, 0, 0, 0.5);
+    }
+    .btn-3d:active, .btn-3d.active-pressed {
+      transform: translateY(8px);
+      box-shadow: 0 2px 0 var(--shadow-color), 0 8px 12px -2px rgba(0, 0, 0, 0.4);
+    }
+    .btn-3d.looping-active {
+      border-color: rgba(244, 63, 94, 0.8) !important;
+      box-shadow: 0 0 25px -2px rgba(244, 63, 94, 0.5), 0 10px 0 var(--shadow-color);
+      animation: pulseGlow 1.8s infinite alternate ease-in-out;
+    }
+    @keyframes pulseGlow {
+      from { box-shadow: 0 0 15px -2px rgba(244, 63, 94, 0.4), 0 10px 0 var(--shadow-color); }
+      to { box-shadow: 0 0 28px 4px rgba(244, 63, 94, 0.85), 0 10px 0 var(--shadow-color); }
+    }
+    @keyframes ripple {
+      0% { transform: scale(0.8); opacity: 1; }
+      100% { transform: scale(1.6); opacity: 0; }
+    }
+    .ripple-fx {
+      animation: ripple 0.5s ease-out forwards;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-rose-500 selection:text-white">
+<!-- Header -->
+<header class="w-full border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30 px-6 py-4">
+<div class="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rose-500 via-amber-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-rose-500/20">
+<svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<div>
+<h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+            SoundBoard 9
+            <span class="text-xs px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 border border-rose-500/30 mono font-semibold">v1.1</span>
+</h1>
+<p class="text-xs text-slate-400">Tekan keyboard <span class="mono text-amber-300 font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">1</span> - <span class="mono text-amber-300 font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">9</span> atau klik tombol di bawah</p>
+</div>
+</div>
+<!-- Quick status & Volume & Global Controls -->
+<div class="flex flex-wrap items-center gap-3">
+<!-- Status -->
+<div class="flex items-center gap-2 bg-slate-800/70 border border-slate-700/70 px-3 py-1.5 rounded-lg text-xs">
+<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+<span class="text-slate-300 font-medium" id="audioStatusText">Audio Siap</span>
+</div>
+<!-- Volume slider -->
+<div class="flex items-center gap-2 bg-slate-800/70 border border-slate-700/70 px-3 py-1.5 rounded-lg">
+<svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M11 5L6 9H2v6h4l5 4V5z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<input class="w-20 accent-rose-500 cursor-pointer h-1.5 bg-slate-700 rounded-lg" id="volumeSlider" max="1" min="0" step="0.05" title="Volume" type="range" value="0.8"/>
+</div>
+<!-- Toggle Mode Loop Button -->
+<button class="flex items-center gap-2 bg-slate-800/80 hover:bg-slate-750 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-300 transition duration-150" id="loopToggleBtn" onclick="toggleLoopMode()" title="Shortcut: Tombol L">
+<svg class="w-4 h-4 text-slate-400 transition" fill="none" id="loopIcon" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+<span>Loop</span>
+<span class="mono text-[10px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-400" id="loopBadge">OFF</span>
+<kbd class="mono text-[10px] px-1 py-0.2 rounded bg-slate-900/90 text-slate-400 border border-slate-700/70">L</kbd>
+</button>
+<!-- Stop All Sounds Button -->
+<button class="flex items-center gap-1.5 bg-rose-600/90 hover:bg-rose-500 text-white text-xs font-bold px-3 py-1.5 rounded-lg border border-rose-400/40 shadow-lg shadow-rose-600/25 active:scale-95 transition" onclick="stopAllSounds()" title="Shortcut: Spacebar atau Escape">
+<svg class="w-4 h-4 fill-current" viewbox="0 0 24 24">
+<rect height="14" rx="2" width="14" x="5" y="5"></rect>
+</svg>
+<span>Stop Semua</span>
+<span class="flex items-center gap-1 ml-0.5">
+<kbd class="mono text-[10px] bg-rose-900/80 border border-rose-400/50 px-1 py-0.2 rounded text-rose-100">Space</kbd>
+<span class="text-[10px] text-rose-200">/</span>
+<kbd class="mono text-[10px] bg-rose-900/80 border border-rose-400/50 px-1 py-0.2 rounded text-rose-100">Esc</kbd>
+</span>
+</button>
+<!-- Edit Sound Github -->
+<button class="flex items-center gap-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-lg border border-slate-700 transition" onclick="toggleConfigModal()">
+<svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+<path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+          Ubah Suara (GitHub)
+        </button>
+</div>
+</div>
+</header>
+<!-- Main Content Grid -->
+<main class="max-w-5xl mx-auto w-full px-6 py-8 flex-1 flex flex-col justify-center">
+<!-- Active Sound Indicator Banner -->
+<div class="mb-6 flex flex-wrap items-center justify-between gap-3 bg-slate-900/80 border border-slate-800 p-3.5 rounded-2xl shadow-inner">
+<div class="flex items-center gap-3">
+<span class="flex h-3 w-3 relative">
+<span class="opacity-0 absolute inline-flex h-full w-full rounded-full bg-rose-400" id="playingPing"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-slate-600" id="playingDot"></span>
+</span>
+<span class="text-xs uppercase tracking-wider text-slate-400 font-semibold">Sedang Memutar:</span>
+<span class="text-sm font-bold text-white mono bg-slate-800/80 px-2.5 py-1 rounded-md border border-slate-700/60" id="currentPlayingName">- Tidak ada -</span>
+<span class="hidden text-[10px] uppercase font-bold mono bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2 py-0.5 rounded-md items-center gap-1" id="loopStatusBadge">
+<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+          Looping
+        </span>
+</div>
+<div class="flex items-center gap-2 text-xs text-slate-400">
+<kbd class="mono px-2 py-1 bg-slate-800 border border-slate-700 rounded text-slate-300 font-bold shadow-sm">1</kbd>
+<span class="text-slate-500">sampai</span>
+<kbd class="mono px-2 py-1 bg-slate-800 border border-slate-700 rounded text-slate-300 font-bold shadow-sm">9</kbd>
+<span class="text-slate-500">pada Numpad / Baris Angka</span>
+</div>
+</div>
+<!-- 9 Sound Buttons Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6" id="soundboardGrid">
+<!-- Buttons dynamically injected / rendered below -->
+</div>
+<!-- Keyboard instruction bar -->
+<div class="mt-8 text-center bg-slate-900/40 border border-slate-800/60 rounded-xl p-4">
+<p class="text-xs text-slate-400 leading-relaxed">
+        💡 <strong class="text-slate-200">Tips Penggunaan:</strong> Anda bisa langsung menekan angka <span class="mono text-rose-400 font-bold">1</span> hingga <span class="mono text-rose-400 font-bold">9</span> di keyboard kapan saja tanpa harus mengklik tombol. Tekan <kbd class="mono text-rose-300 font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">Space</kbd> atau <kbd class="mono text-rose-300 font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">Esc</kbd> untuk menghentikan semua suara seketika, dan tekan <kbd class="mono text-amber-300 font-bold bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700">L</kbd> untuk toggle Mode Loop. Jika link audio (.mp3) kosong, synthesizer web-audio otomatis berbunyi!
+      </p>
+</div>
+</main>
+<!-- Modal Konfigurasi Suara (Bisa dicopy langsung ke Github) -->
+<div class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden" id="configModal">
+<div class="bg-slate-900 border border-slate-700/80 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+<div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-800/50">
+<div class="flex items-center gap-2">
+<div class="p-1.5 rounded-lg bg-indigo-500/20 text-indigo-400">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" viewbox="0 0 24 24">
+<path d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+</svg>
+</div>
+<h2 class="text-lg font-bold text-white">Konfigurasi Suara untuk GitHub</h2>
+</div>
+<button class="text-slate-400 hover:text-white p-1 rounded-lg" onclick="toggleConfigModal()">✕</button>
+</div>
+<div class="p-6 overflow-y-auto space-y-4">
+<div class="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-200 text-xs">
+<strong>Cara deploy &amp; ubah di GitHub:</strong> Simpan file audio Anda di folder <code class="mono bg-amber-950/60 px-1.5 py-0.5 rounded">sounds/</code> di repositori GitHub, lalu ganti URL di variabel <code class="mono bg-amber-950/60 px-1.5 py-0.5 rounded">SOUNDS_CONFIG</code> dalam file <code class="mono bg-amber-950/60 px-1.5 py-0.5 rounded">index.html</code>.
+        </div>
+<div class="space-y-3">
+<label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider">Daftar 9 Suara (Edit Langsung di Sini untuk Menguji):</label>
+<div class="space-y-2 max-h-64 overflow-y-auto pr-1" id="editSoundList">
+<!-- Will be rendered via JS -->
+</div>
+</div>
+<div>
+<label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Snippet Konfigurasi JS (Salin ke GitHub):</label>
+<textarea class="w-full h-28 bg-slate-950 border border-slate-800 rounded-xl p-3 mono text-xs text-emerald-400 font-mono resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500" id="configCodeExport" readonly=""></textarea>
+</div>
+</div>
+<div class="px-6 py-4 border-t border-slate-800 bg-slate-800/40 flex items-center justify-between">
+<button class="text-xs text-rose-400 hover:text-rose-300 font-medium" onclick="resetToDefaults()">Reset ke Standar</button>
+<div class="flex gap-2">
+<button class="px-4 py-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800 rounded-lg" onclick="toggleConfigModal()">Tutup</button>
+<button class="px-4 py-2 text-xs font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-lg shadow-lg shadow-rose-600/30" onclick="applyModalChanges()">Terapkan Perubahan</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer -->
+<footer class="w-full border-t border-slate-800/80 bg-slate-900/40 px-6 py-4">
+<div class="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
+<p>Dibuat untuk kemudahan hosting di <strong>GitHub Pages</strong> • Tanpa backend server</p>
+<p class="mono text-slate-400">Trigger: Numpad 1–9 / Angka 1–9 • Stop: Space/Esc • Loop: L</p>
+</div>
+</footer>
+<script>
+    // ==========================================
+    // KONFIGURASI 9 SUARA (BISA DIUBAH DI GITHUB)
+    // ==========================================
+    let SOUNDS_CONFIG = [
+      {
+        id: 1,
+        key: '1',
+        title: 'Tepuk Tangan',
+        desc: 'Applause & Clap',
+        color: '#ef4444',       // red-500
+        shadow: '#991b1b',      // red-800
+        accent: 'from-red-500 to-rose-600',
+        synthType: 'applause',
+        synthDuration: 1100,
+        url: ''
+      },
+      {
+        id: 2,
+        key: '2',
+        title: 'Sorak Bergembira',
+        desc: 'Cheering & Whistle',
+        color: '#f97316',       // orange-500
+        shadow: '#9a3412',      // orange-800
+        accent: 'from-orange-500 to-amber-600',
+        synthType: 'cheer',
+        synthDuration: 1300,
+        url: ''
+      },
+      {
+        id: 3,
+        key: '3',
+        title: 'Drum Roll & Cymbal',
+        desc: 'Tadaa / Pukulan Gong',
+        color: '#eab308',       // yellow-500
+        shadow: '#854d0e',      // yellow-800
+        accent: 'from-amber-400 to-yellow-600',
+        synthType: 'drumroll',
+        synthDuration: 1550,
+        url: ''
+      },
+      {
+        id: 4,
+        key: '4',
+        title: 'Tawa Penonton',
+        desc: 'Cat / Crowd Laugh',
+        color: '#22c55e',       // green-500
+        shadow: '#166534',      // green-800
+        accent: 'from-emerald-500 to-green-600',
+        synthType: 'laugh',
+        synthDuration: 750,
+        url: ''
+      },
+      {
+        id: 5,
+        key: '5',
+        title: 'Vine Boom',
+        desc: 'Deep Bass Thud',
+        color: '#06b6d4',       // cyan-500
+        shadow: '#155e75',      // cyan-800
+        accent: 'from-cyan-400 to-teal-600',
+        synthType: 'vineboom',
+        synthDuration: 950,
+        url: ''
+      },
+      {
+        id: 6,
+        key: '6',
+        title: 'Air Horn / Klakson',
+        desc: 'Hype Party Horn',
+        color: '#3b82f6',       // blue-500
+        shadow: '#1e40af',      // blue-800
+        accent: 'from-blue-500 to-indigo-600',
+        synthType: 'airhorn',
+        synthDuration: 550,
+        url: ''
+      },
+      {
+        id: 7,
+        key: '7',
+        title: 'SpongeBob Fail',
+        desc: 'Sad Trombone / Wah-Wah',
+        color: '#8b5cf6',       // purple-500
+        shadow: '#5b21b6',      // purple-800
+        accent: 'from-violet-500 to-purple-600',
+        synthType: 'fail',
+        synthDuration: 1400,
+        url: ''
+      },
+      {
+        id: 8,
+        key: '8',
+        title: 'Alarm Bahaya',
+        desc: 'Danger / Emergency',
+        color: '#ec4899',       // pink-500
+        shadow: '#9d174d',      // pink-800
+        accent: 'from-pink-500 to-rose-600',
+        synthType: 'alarm',
+        synthDuration: 800,
+        url: ''
+      },
+      {
+        id: 9,
+        key: '9',
+        title: 'Victory / Coin Ting',
+        desc: '8-bit Level Up',
+        color: '#10b981',       // emerald-500
+        shadow: '#065f46',      // emerald-800
+        accent: 'from-teal-400 to-emerald-600',
+        synthType: 'victory',
+        synthDuration: 650,
+        url: ''
+      }
+    ];
+
+    // ==========================================
+    // AUDIO STATE & GLOBAL REFS
+    // ==========================================
+    let isLooping = false;
+    let activeAudioElements = [];
+    let activeSynthGains = [];
+    let activeSynthTimers = [];
+    let currentLoopInterval = null;
+    let currentlyPlayingItem = null;
+    let resetIndicatorTimer = null;
+
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // Toggle Loop Mode
+    function toggleLoopMode() {
+      isLooping = !isLooping;
+      const btn = document.getElementById('loopToggleBtn');
+      const badge = document.getElementById('loopBadge');
+      const icon = document.getElementById('loopIcon');
+      const loopStatusBadge = document.getElementById('loopStatusBadge');
+
+      if (isLooping) {
+        btn.classList.add('bg-amber-500/20', 'border-amber-500/50', 'text-amber-300');
+        btn.classList.remove('bg-slate-800/80', 'border-slate-700', 'text-slate-300');
+        badge.textContent = 'ON';
+        badge.className = 'mono text-[10px] px-1.5 py-0.5 rounded bg-amber-500 text-slate-950 font-bold';
+        icon.classList.add('text-amber-400');
+        icon.classList.remove('text-slate-400');
+        if (currentlyPlayingItem) {
+          loopStatusBadge.classList.remove('hidden');
+          loopStatusBadge.classList.add('flex');
+          // Update active card to looping-active
+          const btnCard = document.getElementById(`btn-sound-${currentlyPlayingItem.id}`);
+          if (btnCard) btnCard.classList.add('looping-active');
+        }
+      } else {
+        btn.classList.remove('bg-amber-500/20', 'border-amber-500/50', 'text-amber-300');
+        btn.classList.add('bg-slate-800/80', 'border-slate-700', 'text-slate-300');
+        badge.textContent = 'OFF';
+        badge.className = 'mono text-[10px] px-1.5 py-0.5 rounded bg-slate-900 border border-slate-700 text-slate-400';
+        icon.classList.remove('text-amber-400');
+        icon.classList.add('text-slate-400');
+        loopStatusBadge.classList.add('hidden');
+        loopStatusBadge.classList.remove('flex');
+
+        // Clear ongoing loop interval but let the current sound finish gracefully
+        if (currentLoopInterval) {
+          clearInterval(currentLoopInterval);
+          currentLoopInterval = null;
+        }
+        // Update HTML5 audio loops
+        activeAudioElements.forEach(audio => { audio.loop = false; });
+        document.querySelectorAll('.btn-3d').forEach(b => b.classList.remove('looping-active'));
+      }
+    }
+
+    // Stop All Sounds Function
+    function stopAllSounds() {
+      // 1. Stop HTML5 audio objects
+      activeAudioElements.forEach(audio => {
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.src = '';
+        } catch (e) {}
+      });
+      activeAudioElements = [];
+
+      // 2. Stop Web Audio API active gains
+      activeSynthGains.forEach(gainNode => {
+        try {
+          if (audioCtx) {
+            gainNode.gain.cancelScheduledValues(audioCtx.currentTime);
+            gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+            gainNode.disconnect();
+          }
+        } catch (e) {}
+      });
+      activeSynthGains = [];
+
+      // 3. Clear all timers & loop interval
+      activeSynthTimers.forEach(t => clearTimeout(t));
+      activeSynthTimers = [];
+
+      if (currentLoopInterval) {
+        clearInterval(currentLoopInterval);
+        currentLoopInterval = null;
+      }
+      if (resetIndicatorTimer) {
+        clearTimeout(resetIndicatorTimer);
+        resetIndicatorTimer = null;
+      }
+
+      currentlyPlayingItem = null;
+
+      // 4. Reset UI Indicators
+      const nameEl = document.getElementById('currentPlayingName');
+      nameEl.textContent = '- Tidak ada -';
+      nameEl.classList.remove('text-rose-400');
+
+      const ping = document.getElementById('playingPing');
+      const dot = document.getElementById('playingDot');
+      ping.classList.add('opacity-0');
+      dot.classList.remove('bg-rose-500');
+      dot.classList.add('bg-slate-600');
+
+      const loopStatusBadge = document.getElementById('loopStatusBadge');
+      loopStatusBadge.classList.add('hidden');
+      loopStatusBadge.classList.remove('flex');
+
+      // 5. Remove button active / glow states
+      document.querySelectorAll('.btn-3d').forEach(b => {
+        b.classList.remove('active-pressed', 'looping-active');
+      });
+    }
+
+    // Synthesizer Generator for instant sound without needing external MP3s
+    function playSynthesizedSound(type, volume) {
+      const ctx = getAudioContext();
+      const now = ctx.currentTime;
+      const master = ctx.createGain();
+      master.gain.setValueAtTime(volume, now);
+      master.connect(ctx.destination);
+      activeSynthGains.push(master);
+
+      if (type === 'applause') {
+        for (let i = 0; i < 20; i++) {
+          const clapTime = now + (Math.random() * 0.9);
+          const bufferSize = ctx.sampleRate * 0.08;
+          const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const data = buffer.getChannelData(0);
+          for (let j = 0; j < bufferSize; j++) {
+            data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufferSize * 0.3));
+          }
+          const noise = ctx.createBufferSource();
+          noise.buffer = buffer;
+          const filter = ctx.createBiquadFilter();
+          filter.type = 'bandpass';
+          filter.frequency.value = 1000 + Math.random() * 600;
+          noise.connect(filter);
+          filter.connect(master);
+          noise.start(clapTime);
+        }
+      } else if (type === 'cheer') {
+        [350, 520, 680, 840].forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, now);
+          osc.frequency.exponentialRampToValueAtTime(freq * 1.3, now + 0.4);
+          osc.frequency.exponentialRampToValueAtTime(freq * 0.9, now + 1.2);
+
+          gain.gain.setValueAtTime(0.12 / (idx + 1), now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(now);
+          osc.stop(now + 1.2);
+        });
+      } else if (type === 'vineboom') {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(32, now + 0.9);
+
+        gain.gain.setValueAtTime(1, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.9);
+
+        osc.connect(gain);
+        gain.connect(master);
+        osc.start(now);
+        osc.stop(now + 0.9);
+      } else if (type === 'airhorn') {
+        const freqs = [466.16, 523.25, 622.25];
+        freqs.forEach(f => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, now);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.setValueAtTime(0.2, now + 0.35);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        });
+      } else if (type === 'drumroll') {
+        for (let i = 0; i < 14; i++) {
+          const t = now + (i * 0.05);
+          const osc = ctx.createOscillator();
+          const g = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(180, t);
+          g.gain.setValueAtTime(0.15 + (i * 0.04), t);
+          g.gain.exponentialRampToValueAtTime(0.01, t + 0.04);
+          osc.connect(g);
+          g.connect(master);
+          osc.start(t);
+          osc.stop(t + 0.05);
+        }
+        const cymbalTimer = setTimeout(() => {
+          if (!audioCtx) return;
+          const crashNow = audioCtx.currentTime;
+          const osc2 = audioCtx.createOscillator();
+          const g2 = audioCtx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.setValueAtTime(587.33, crashNow);
+          g2.gain.setValueAtTime(0.5, crashNow);
+          g2.gain.exponentialRampToValueAtTime(0.001, crashNow + 0.8);
+          osc2.connect(g2);
+          g2.connect(master);
+          osc2.start(crashNow);
+          osc2.stop(crashNow + 0.8);
+        }, 650);
+        activeSynthTimers.push(cymbalTimer);
+      } else if (type === 'fail') {
+        const notes = [311.13, 293.66, 277.18, 261.63];
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const startT = now + (idx * 0.25);
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(freq, startT);
+          if (idx === 3) {
+            osc.frequency.linearRampToValueAtTime(230, startT + 0.6);
+          }
+          gain.gain.setValueAtTime(0.25, startT);
+          gain.gain.exponentialRampToValueAtTime(0.001, startT + (idx === 3 ? 0.6 : 0.22));
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(startT);
+          osc.stop(startT + (idx === 3 ? 0.6 : 0.25));
+        });
+      } else if (type === 'alarm') {
+        for (let i = 0; i < 4; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const t = now + (i * 0.18);
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(i % 2 === 0 ? 880 : 660, t);
+          gain.gain.setValueAtTime(0.3, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.16);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(t);
+          osc.stop(t + 0.17);
+        }
+      } else if (type === 'victory') {
+        const arpeggio = [523.25, 659.25, 783.99, 1046.50];
+        arpeggio.forEach((f, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const t = now + (idx * 0.12);
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(f, t);
+          gain.gain.setValueAtTime(0.18, t);
+          gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(t);
+          osc.stop(t + 0.26);
+        });
+      } else if (type === 'laugh') {
+        for (let i = 0; i < 5; i++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          const t = now + (i * 0.12);
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(400 + (Math.sin(i) * 80), t);
+          osc.frequency.linearRampToValueAtTime(320, t + 0.1);
+          gain.gain.setValueAtTime(0.2, t);
+          gain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
+          osc.connect(gain);
+          gain.connect(master);
+          osc.start(t);
+          osc.stop(t + 0.11);
+        }
+      }
+    }
+
+    // Play single sound instance
+    function playSingleSoundInstance(item, vol) {
+      if (item.url && item.url.trim() !== '') {
+        try {
+          const audio = new Audio(item.url);
+          audio.volume = vol;
+          audio.loop = isLooping;
+          activeAudioElements.push(audio);
+          audio.play().catch(err => {
+            console.warn('URL gagal diputar, fallback ke synth:', err);
+            playSynthesizedSound(item.synthType, vol);
+          });
+          audio.onended = () => {
+            const index = activeAudioElements.indexOf(audio);
+            if (index > -1) activeAudioElements.splice(index, 1);
+            if (!isLooping && activeAudioElements.length === 0 && activeSynthGains.length === 0) {
+              resetIndicators();
+            }
+          };
+        } catch (e) {
+          playSynthesizedSound(item.synthType, vol);
+        }
+      } else {
+        playSynthesizedSound(item.synthType, vol);
+      }
+    }
+
+    function resetIndicators() {
+      const ping = document.getElementById('playingPing');
+      const dot = document.getElementById('playingDot');
+      ping.classList.add('opacity-0');
+      dot.classList.remove('bg-rose-500');
+      dot.classList.add('bg-slate-600');
+      const loopStatusBadge = document.getElementById('loopStatusBadge');
+      loopStatusBadge.classList.add('hidden');
+      loopStatusBadge.classList.remove('flex');
+    }
+
+    // Play Sound Handler with Loop Support
+    function playSound(item) {
+      // Clear ongoing loops first if user plays another
+      if (currentLoopInterval) {
+        clearInterval(currentLoopInterval);
+        currentLoopInterval = null;
+      }
+      activeSynthTimers.forEach(t => clearTimeout(t));
+      activeSynthTimers = [];
+
+      document.querySelectorAll('.btn-3d').forEach(b => b.classList.remove('looping-active'));
+
+      currentlyPlayingItem = item;
+      const vol = parseFloat(document.getElementById('volumeSlider').value) || 0.8;
+
+      // Update UI Status
+      const nameEl = document.getElementById('currentPlayingName');
+      nameEl.textContent = `[${item.key}] ${item.title}`;
+      nameEl.classList.add('text-rose-400');
+
+      const ping = document.getElementById('playingPing');
+      const dot = document.getElementById('playingDot');
+      ping.classList.remove('opacity-0');
+      dot.classList.remove('bg-slate-600');
+      dot.classList.add('bg-rose-500');
+
+      const loopStatusBadge = document.getElementById('loopStatusBadge');
+      if (isLooping) {
+        loopStatusBadge.classList.remove('hidden');
+        loopStatusBadge.classList.add('flex');
+      } else {
+        loopStatusBadge.classList.add('hidden');
+        loopStatusBadge.classList.remove('flex');
+      }
+
+      // Visual button depression & glow
+      const btn = document.getElementById(`btn-sound-${item.id}`);
+      if (btn) {
+        btn.classList.add('active-pressed');
+        setTimeout(() => btn.classList.remove('active-pressed'), 180);
+        if (isLooping) {
+          btn.classList.add('looping-active');
+        }
+      }
+
+      // Initial Play
+      playSingleSoundInstance(item, vol);
+
+      // Handle looping for synthesized sounds (HTML5 uses audio.loop)
+      if (isLooping && (!item.url || item.url.trim() === '')) {
+        const intervalTime = item.synthDuration || 1000;
+        currentLoopInterval = setInterval(() => {
+          if (!isLooping) {
+            clearInterval(currentLoopInterval);
+            currentLoopInterval = null;
+            return;
+          }
+          const currentVol = parseFloat(document.getElementById('volumeSlider').value) || 0.8;
+          playSynthesizedSound(item.synthType, currentVol);
+        }, intervalTime);
+      }
+
+      // Reset indicators if not looping
+      if (!isLooping) {
+        if (resetIndicatorTimer) clearTimeout(resetIndicatorTimer);
+        const duration = item.synthDuration || 1000;
+        resetIndicatorTimer = setTimeout(() => {
+          if (!isLooping && activeAudioElements.length === 0) {
+            resetIndicators();
+          }
+        }, duration);
+      }
+    }
+
+    // Render 9 Buttons
+    function renderSoundboard() {
+      const container = document.getElementById('soundboardGrid');
+      container.innerHTML = '';
+
+      SOUNDS_CONFIG.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'relative group';
+
+        const isItemLooping = isLooping && currentlyPlayingItem && currentlyPlayingItem.id === item.id;
+
+        card.innerHTML = `
+          <button id="btn-sound-${item.id}"
+            onclick='triggerSound(${item.id})'
+            style="--shadow-color: ${item.shadow};"
+            class="btn-3d w-full h-36 rounded-2xl p-5 flex flex-col justify-between text-left relative overflow-hidden bg-slate-900 border border-slate-700/60 hover:border-slate-500/80 cursor-pointer focus:outline-none ${isItemLooping ? 'looping-active' : ''}">
+            
+            <!-- Glow background highlight -->
+            <div class="absolute -right-6 -bottom-6 w-32 h-32 rounded-full opacity-10 blur-xl bg-gradient-to-br ${item.accent} group-hover:opacity-25 transition-opacity"></div>
+            
+            <!-- Top bar inside button -->
+            <div class="flex items-center justify-between z-10 w-full">
+              <span class="mono inline-flex items-center justify-center w-8 h-8 rounded-xl bg-slate-800 text-white font-bold text-sm border border-slate-700 shadow-md group-hover:border-slate-500 group-hover:scale-105 transition">
+                ${item.key}
+              </span>
+
+              <!-- Status tag (file vs synth) -->
+              <span class="text-[10px] mono px-2 py-0.5 rounded-md ${item.url ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30'}">
+                ${item.url ? 'MP3 Custom' : 'Synth FX'}
+              </span>
+            </div>
+
+            <!-- Sound Title & Subtitle -->
+            <div class="z-10 mt-2">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${item.color};"></span>
+                <h3 class="font-bold text-white text-base tracking-wide group-hover:text-amber-200 transition-colors line-clamp-1">
+                  ${item.title}
+                </h3>
+              </div>
+              <p class="text-xs text-slate-400 mt-1 line-clamp-1">${item.desc}</p>
+            </div>
+
+            <!-- Bottom tactile press strip -->
+            <div class="w-full h-1 rounded-full mt-2 opacity-50" style="background-color: ${item.color};"></div>
+          </button>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function triggerSound(id) {
+      const item = SOUNDS_CONFIG.find(s => s.id === id);
+      if (item) playSound(item);
+    }
+
+    // Keyboard Listener
+    window.addEventListener('keydown', (e) => {
+      // Don't trigger if user is typing in inputs or textarea
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+      // Stop sounds on Space or Escape
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Escape' || e.code === 'Escape') {
+        e.preventDefault();
+        stopAllSounds();
+        return;
+      }
+
+      // Loop toggle shortcut 'L' or 'l'
+      if (e.key === 'l' || e.key === 'L') {
+        e.preventDefault();
+        toggleLoopMode();
+        return;
+      }
+
+      let key = e.key;
+      // Handle Numpad
+      if (e.code && e.code.startsWith('Numpad')) {
+        key = e.code.replace('Numpad', '');
+      }
+
+      const match = SOUNDS_CONFIG.find(s => s.key === key);
+      if (match) {
+        e.preventDefault();
+        playSound(match);
+      }
+    });
+
+    // Volume Slider listener
+    document.getElementById('volumeSlider').addEventListener('input', (e) => {
+      const newVol = parseFloat(e.target.value);
+      activeAudioElements.forEach(a => { a.volume = newVol; });
+    });
+
+    // Modal & GitHub Config Logic
+    function toggleConfigModal() {
+      const modal = document.getElementById('configModal');
+      const isHidden = modal.classList.toggle('hidden');
+      if (!isHidden) {
+        populateConfigModal();
+      }
+    }
+
+    function populateConfigModal() {
+      const list = document.getElementById('editSoundList');
+      list.innerHTML = '';
+
+      SOUNDS_CONFIG.forEach((s, idx) => {
+        const row = document.createElement('div');
+        row.className = 'bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex flex-col sm:flex-row gap-2 items-center text-xs';
+        row.innerHTML = `
+          <span class="mono font-bold px-2 py-1 bg-slate-800 rounded text-slate-200">${s.key}</span>
+          <input type="text" id="cfg-title-${idx}" value="${s.title}" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-white w-full sm:w-1/3" placeholder="Nama Suara">
+          <input type="text" id="cfg-url-${idx}" value="${s.url || ''}" class="bg-slate-900 border border-slate-700 px-2 py-1 rounded text-emerald-400 mono w-full sm:w-2/3" placeholder="URL file .mp3 (atau sounds/nama.mp3)">
+        `;
+        list.appendChild(row);
+      });
+
+      updateExportCode();
+    }
+
+    function updateExportCode() {
+      const exportBox = document.getElementById('configCodeExport');
+      exportBox.value = `// Ganti array SOUNDS_CONFIG di index.html dengan ini:\nlet SOUNDS_CONFIG = ` + JSON.stringify(SOUNDS_CONFIG, null, 2) + ';';
+    }
+
+    function applyModalChanges() {
+      SOUNDS_CONFIG.forEach((s, idx) => {
+        const titleInput = document.getElementById(`cfg-title-${idx}`);
+        const urlInput = document.getElementById(`cfg-url-${idx}`);
+        if (titleInput) s.title = titleInput.value.trim() || s.title;
+        if (urlInput) s.url = urlInput.value.trim();
+      });
+
+      renderSoundboard();
+      updateExportCode();
+      toggleConfigModal();
+    }
+
+    function resetToDefaults() {
+      SOUNDS_CONFIG.forEach(s => s.url = '');
+      populateConfigModal();
+      renderSoundboard();
+    }
+
+    // Initialize
+    renderSoundboard();
+  </script>
+</body></html>
